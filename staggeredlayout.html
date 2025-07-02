@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al-Tanmiya Project Stone Layout Pattern Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Define CSS Variables for Light Mode */
+        :root {
+            --bg-color: #f0f0f0;
+            --container-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #ccc;
+            --grout-bg: #e0e0e0;
+            --stone-fill: #E0C9A6;
+            --stone-hover-fill: #D4B996;
+            --button-bg: #4A90E2;
+            --button-hover-bg: #357ABD;
+            --info-bg: #f9f9f9;
+            --info-border: #ddd;
+            --info-text: #555;
+            --dimension-text-color: #333;
+            --active-dimension-color: #007bff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --modal-bg: rgba(0, 0, 0, 0.5); /* Semi-transparent black for modal overlay */
+            --modal-content-bg: #ffffff;
+            --modal-text-color: #333;
+            --link-color: #1a73e8; /* Standard blue for links */
+        }
+
+        /* Dark Mode Overrides */
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --container-bg: #2c2c2c;
+            --text-color: #e0e0e0;
+            --border-color: #555;
+            --grout-bg: #3a3a3a;
+            --stone-fill: #5a4b3d; /* Darker beige/brown for dark mode */
+            --stone-hover-fill: #6b5c4d;
+            --button-bg: #6a82fb; /* Lighter blue for dark mode buttons */
+            --button-hover-bg: #536ee6;
+            --info-bg: #3a3a3a;
+            --info-border: #555;
+            --info-text: #bbb;
+            --dimension-text-color: #e0e0e0; /* Lighter text for dimensions in dark mode */
+            --active-dimension-color: #87ceeb; /* Lighter blue for emphasis */
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --modal-bg: rgba(0, 0, 0, 0.7);
+            --modal-content-bg: #3a3a3a;
+            --modal-text-color: #e0e0e0;
+            --link-color: #87ceeb;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column; /* Allow content to stack vertically */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease; /* Smooth transition for theme change */
+        }
+        .container {
+            background-color: var(--container-bg);
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            padding: 2rem;
+            max-width: 1200px; /* Max width for larger screens */
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        h1 {
+            color: var(--text-color);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+        .pattern-container {
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background-color: var(--grout-bg);
+            position: relative;
+            width: 100%;
+            padding-bottom: 75%; /* Aspect ratio (4:3) */
+            height: 0;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .pattern-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .stone {
+            fill: var(--stone-fill);
+            stroke: #333; /* Grout stroke remains dark for contrast */
+            stroke-width: 1;
+            transition: fill 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .stone:hover {
+            fill: var(--stone-hover-fill);
+        }
+        .info-box {
+            background-color: var(--info-bg);
+            border: 1px solid var(--info-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--info-text);
+            text-align: left;
+            width: 100%;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+        .info-box ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+        }
+        .info-box li {
+            margin-bottom: 0.5rem;
+        }
+        .dimension-display {
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--active-dimension-color);
+            text-align: center;
+            min-height: 1.5em;
+            transition: color 0.3s ease;
+        }
+        .pattern-boundary {
+            stroke: #ff0000; /* Red dashed line for boundary */
+            stroke-width: 2;
+            stroke-dasharray: 5 5;
+            fill: none;
+            pointer-events: none;
+        }
+        .hidden {
+            display: none;
+        }
+        .dimension-text {
+            fill: var(--dimension-text-color);
+            font-size: 0.7em;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+            font-weight: bold;
+            transition: fill 0.3s ease;
+        }
+        .button-group {
+            display: flex;
+            gap: 0.75rem; /* Slightly smaller gap for more buttons */
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .button-group button {
+            padding: 0.75rem; /* Square buttons for icons */
+            background-color: var(--button-bg);
+            color: white;
+            border-radius: 0.5rem; /* Rounded corners for buttons */
+            box-shadow: 0 2px 4px var(--shadow-color);
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out, box-shadow 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            display: flex; /* For icon centering */
+            align-items: center;
+            justify-content: center;
+            width: 40px; /* Fixed width for icon buttons */
+            height: 40px; /* Fixed height for icon buttons */
+        }
+        .button-group button:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-1px);
+        }
+        .button-group button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.5);
+        }
+        .button-group button svg {
+            width: 20px; /* Icon size */
+            height: 20px;
+            fill: white; /* Icon color */
+        }
+
+        /* Footer Styling */
+        footer {
+            margin-top: 3rem;
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--info-text);
+            width: 100%;
+            transition: color 0.3s ease;
+        }
+        footer button {
+            background: none;
+            border: none;
+            color: var(--link-color);
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0;
+            margin: 0;
+            transition: color 0.3s ease;
+        }
+        footer button:hover {
+            color: var(--button-hover-bg);
+        }
+
+        /* Full Screen Mode for Mobile */
+        body.full-screen-mode {
+            padding: 0;
+            margin: 0;
+            overflow: hidden; /* Hide scrollbars */
+            justify-content: flex-start; /* Align content to top */
+        }
+        body.full-screen-mode .container {
+            border-radius: 0;
+            box-shadow: none;
+            padding: 0;
+            max-width: 100vw;
+            min-height: 100vh;
+            justify-content: center;
+        }
+        body.full-screen-mode .pattern-container {
+            border-radius: 0;
+            width: 100vw;
+            height: 100vh;
+            padding-bottom: 0; /* Override aspect ratio padding */
+        }
+        body.full-screen-mode .pattern-svg {
+            width: 100%;
+            height: 100%;
+        }
+        body.full-screen-mode h1,
+        body.full-screen-mode .dimension-display,
+        body.full-screen-mode .button-group,
+        body.full-screen-mode .info-box,
+        body.full-screen-mode footer {
+            display: none; /* Hide other UI elements */
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--modal-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Ensure it's on top */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: var(--modal-content-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            position: relative;
+            max-width: 90%;
+            width: 400px; /* Fixed width for modal */
+            color: var(--modal-text-color);
+            transform: translateY(-20px); /* Start slightly above */
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--modal-text-color);
+            transition: color 0.2s ease;
+        }
+        .modal-close-btn:hover {
+            color: #ff0000;
+        }
+        .modal-content a {
+            color: var(--link-color);
+            text-decoration: underline;
+            transition: color 0.3s ease;
+        }
+        .modal-content a:hover {
+            color: var(--button-hover-bg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold">Al-Tanmiya Project Stone Layout Pattern Visualizer</h1>
+
+        <div class="pattern-container">
+            <svg id="patternSvg" class="pattern-svg" viewBox="0 0 1000 750"></svg>
+        </div>
+
+        <div class="dimension-display" id="dimensionDisplay">
+            Click on a stone to see its dimensions.
+        </div>
+
+        <div class="button-group">
+            <button id="toggleBoundaryBtn" title="Toggle Pattern Boundary">
+                <!-- Boundary Icon: Square with dashed border -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke-dasharray="4 4"></rect>
+                </svg>
+            </button>
+            <button id="toggleAllDimensionsBtn" title="Toggle All Dimensions">
+                <!-- Dimensions Icon: Ruler -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <line x1="12" y1="2" x2="12" y2="6"></line>
+                    <line x1="10" y1="4" x2="14" y2="4"></line>
+                    <line x1="8" y1="6" x2="8" y2="10"></line>
+                    <line x1="16" y1="6" x2="16" y2="10"></line>
+                </svg>
+            </button>
+            <button id="shuffleStonesBtn" title="Shuffle Stones (within rows)">
+                <!-- Shuffle Icon: Two arrows crossing -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 3 21 3 21 8"></polyline>
+                    <line x1="4" y1="20" x2="21" y2="3"></line>
+                    <polyline points="21 16 21 21 16 21"></polyline>
+                    <line x1="21" y1="21" x2="4" y2="4"></line>
+                </svg>
+            </button>
+            <button id="cycleRowSequenceBtn" title="Cycle Row Sequence">
+                <!-- Cycle Icon: Arrows forming a loop -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 16H2.5"></path>
+                    <path d="M2.5 16s-2-2-2-5 2-5 2-5"></path>
+                    <path d="M21.5 16s2-2 2-5-2-5-2-5"></path>
+                    <line x1="2.5" y1="16" x2="2.5" y2="21"></line>
+                    <line x1="21.5" y1="16" x2="21.5" y2="21"></line>
+                </svg>
+            </button>
+            <button id="cycleRepeatBtn" title="Cycle Pattern Repetition (x1, x2, x4)">
+                <!-- Repeat Cycle Icon: Grid with dynamic text -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="3" y1="15" x2="21" y2="15"></line>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                    <line x1="15" y1="3" x2="15" y2="21"></line>
+                    <text x="12" y="12" font-size="8" fill="white" text-anchor="middle" dominant-baseline="middle" class="repeat-text">x1</text>
+                </svg>
+            </button>
+            <button id="exportJpegBtn" title="Export as JPEG">
+                <!-- JPEG Export Icon: File with download arrow -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="12" x2="12" y2="16"></line>
+                    <polyline points="9 15 12 18 15 15"></polyline>
+                </svg>
+            </button>
+            <button id="exportPatBtn" title="Export as PAT">
+                <!-- PAT Export Icon: File with download arrow and PAT text -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="12" x2="12" y2="16"></line>
+                    <polyline points="9 15 12 18 15 15"></polyline>
+                    <text x="12" y="9" font-size="8" fill="white" text-anchor="middle" dominant-baseline="middle">PAT</text>
+                </svg>
+            </button>
+            <button id="toggleThemeBtn" title="Toggle Light/Dark Mode">
+                <!-- Light/Dark Mode Icon: Sun/Moon -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+            <button id="toggleFullScreenBtn" title="Toggle Full Screen View (Mobile)">
+                <!-- Full Screen Icon: Expand/Collapse -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="info-box">
+            <p class="font-semibold mb-2">Interpretation of the pattern:</p>
+            <ul>
+                <li>The pattern is repeated horizontally and vertically to demonstrate its seamless nature.</li>
+                <li>The spacer (grout) is **0.3 cm** horizontally and vertically.</li>
+            </ul>
+            <p class="mt-3">This visualization helps you see the overall aesthetic and repetition of your stone layout.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>
+            © 2025 Muhamad Shkeir · Custom pattern visualization by I.A. Muhamad Shkeir for Al-Tanmiya Project · Solution No. 014
+        </p>
+        <button id="openContactModalBtn">Connect with Muhamad Shkeir</button>
+    </footer>
+
+    <!-- Contact Modal -->
+    <div id="contactModalOverlay" class="modal-overlay">
+        <div class="modal-content">
+            <button id="closeContactModalBtn" class="modal-close-btn" title="Close Modal">
+                &times;
+            </button>
+            <h2 class="text-lg font-semibold mb-4">Connect with Muhamad Shkeir</h2>
+            <ul class="space-y-3 text-sm">
+                <li>
+                    <strong>Instagram:</strong>{' '}
+                    <a href="https://www.instagram.com/muhamad.a.shk/" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">
+                        @muhamad.a.shk
+                    </a>
+                </li>
+                <li>
+                    <strong>Business IG:</strong>{' '}
+                    <a href="https://www.instagram.com/archi4.design/" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">
+                        @archi4.design
+                    </a>
+                </li>
+                <li>
+                    <strong>Behance:</strong>{' '}
+                    <a href="https://www.behance.net/muhamadshkeir" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">
+                        behance.net/muhamadshkeir
+                    </a>
+                </li>
+                <li>
+                    <strong>LinkedIn:</strong>{' '}
+                    <a href="http://www.linkedin.com/in/muhammad-s-shkeir" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">
+                        linkedin.com/in/muhammad-s-shkeir
+                    </a>
+                </li>
+                <li>
+                    <strong>GitHub:</strong>{' '}
+                    <a href="https://github.com/mike-ai-lab" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">
+                        github.com/mike-ai-lab
+                    </a>
+                </li>
+                <li>
+                    <strong>Phone:</strong>{' '}
+                    <a href="tel:+966561656429" class="text-blue-700 underline">+966 56 165 6429</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Your provided pattern data
+        const userPatternInput = [
+            "Row 1 (45):   120 | 80 | 100 | 90 | 110 | ",
+            "Row 2 (30):   90 | 100 | 110 | 80 | 120 | ",
+            "Row 3 (15):   100 | 120 | 80 | 110 | 90 |",
+            "Row 4 (45):   110 | 80 | 90 | 120 | 100 |",
+            "Row 5 (30):   80 | 120 | 100 | 90 | 110 |",
+            "Row 6 (15):   90 | 110 | 80 | 100 | 120 |",
+            "Row 7 (45):   120 | 90 | 100 | 110 | 80 |",
+            "Row 8 (30):   100 | 80 | 90 | 120 | 110 |",
+            "Row 9 (15):   80 | 90 | 120 | 100 | 110 |"
+        ];
+
+        // Grout thickness for visual representation in SVG
+        // Assuming 1 unit in your pattern data corresponds to 1 cm, so 0.3 cm grout
+        const GROUT_THICKNESS = 0.3; // Changed to 0.3 for 0.3 cm spacer
+
+        let patternUnitWidth = 0;
+        let patternUnitHeight = 0;
+        let boundaryRects = []; // Array to store boundary rectangles
+        let dimensionTextElements = []; // Array to store dimension text elements
+
+        // State variables for toggles
+        let showAllDimensions = false;
+        let showPatternBoundary = false;
+        
+        // Repeat factor cycle
+        const repeatFactors = [1, 2, 4];
+        let currentRepeatFactorIndex = 0; // Index for repeatFactors array
+
+        // Global variables for random pattern generation
+        let originalParsedPattern = []; // Stores the raw parsed data
+        let currentDisplayedPattern = []; // The pattern currently being drawn
+
+        const allHeightSequences = [
+            [45, 30, 15, 45, 30, 15, 45, 30, 15], // Option 1
+            [15, 30, 45, 15, 30, 45, 15, 30, 45], // Option 2
+            [30, 15, 45, 30, 15, 45, 30, 15, 45]  // Option 3
+        ];
+        let currentSequenceIndex = 0; // To cycle through allHeightSequences
+        let rowsByHeightMap = {}; // Stores original rows grouped by height for easy access
+
+        function parsePatternData(patternData) {
+            const parsedRows = [];
+            patternData.forEach((rowStr, index) => {
+                try {
+                    const heightMatch = rowStr.match(/\((\d+)\)/);
+                    if (!heightMatch) {
+                        console.warn(`Warning: Could not find height in row: ${rowStr}. Skipping.`);
+                        return;
+                    }
+                    const rowHeight = parseInt(heightMatch[1], 10);
+
+                    const numbersPart = rowStr.substring(rowStr.indexOf(':') + 1);
+                    const widths = numbersPart.split('|')
+                                             .map(s => s.trim())
+                                             .filter(s => s !== '')
+                                             .map(s => parseInt(s, 10));
+
+                    if (widths.some(isNaN) || widths.length === 0) {
+                        console.warn(`Warning: Invalid or no widths found in row: ${rowStr}. Skipping.`);
+                        return;
+                    }
+                    // Store a unique ID for each original row to reference it later
+                    parsedRows.push({ id: `row_${index}`, height: rowHeight, widths: widths });
+
+                } catch (e) {
+                    console.error(`Error parsing row '${rowStr}': ${e}`);
+                }
+            });
+            return parsedRows;
+        }
+
+        function drawPattern() {
+            const svg = document.getElementById('patternSvg');
+            if (!svg) {
+                console.error("SVG element not found.");
+                return;
+            }
+            svg.innerHTML = ''; // Clear previous drawings
+            boundaryRects = []; // Clear boundary rects when redrawing
+            dimensionTextElements = []; // Clear dimension text elements when redrawing
+
+            // Use the currentDisplayedPattern for drawing
+            const patternToDraw = currentDisplayedPattern;
+            if (patternToDraw.length === 0) {
+                console.error("No valid pattern data to draw.");
+                return;
+            }
+
+            // Calculate the total width of one repeating segment of stones
+            // Assuming all rows have the same number of stone pieces and thus the same total width
+            const baseRowWidthSum = patternToDraw[0].widths.reduce((sum, width) => sum + width + GROUT_THICKNESS, 0);
+            patternUnitWidth = baseRowWidthSum - GROUT_THICKNESS;
+
+            // Calculate the total height of one repeating segment of rows
+            patternUnitHeight = patternToDraw.reduce((sum, row) => sum + row.height + GROUT_THICKNESS, 0) - GROUT_THICKNESS;
+
+            // Determine how many times to repeat the pattern to fill the SVG viewbox
+            const svgWidth = 1000; // Corresponds to viewBox width
+            const svgHeight = 750; // Corresponds to viewBox height
+
+            // Apply currentRepeatFactor
+            const currentRepeatFactor = repeatFactors[currentRepeatFactorIndex];
+            const repeatX = Math.max(1, Math.ceil(svgWidth / patternUnitWidth)) * currentRepeatFactor;
+            const repeatY = Math.max(1, Math.ceil(svgHeight / patternUnitHeight)) * currentRepeatFactor;
+
+            // Adjust viewBox to encompass the full repeated pattern
+            svg.setAttribute('viewBox', `0 0 ${patternUnitWidth * repeatX} ${patternUnitHeight * repeatY}`);
+
+            let currentY = 0;
+            let rowInPatternIndex = 0; // To track the row number within the current pattern unit
+
+            // Loop to draw the pattern repeatedly
+            for (let ry = 0; ry < repeatY; ry++) {
+                currentY = ry * (patternUnitHeight + GROUT_THICKNESS); // Start Y for the current pattern block
+
+                for (let i = 0; i < patternToDraw.length; i++) {
+                    const row = patternToDraw[i];
+                    rowInPatternIndex = i + 1; // 1-based index for row in pattern
+
+                    let currentX = 0;
+                    let stoneInRowIndex = 0; // To track the stone number within the current row
+
+                    for (let rx = 0; rx < repeatX; rx++) {
+                        currentX = rx * (patternUnitWidth + GROUT_THICKNESS); // Start X for the current pattern block
+                        
+                        // Draw the pattern boundary for each repeating unit
+                        const boundaryRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        boundaryRect.setAttribute('x', rx * (patternUnitWidth + GROUT_THICKNESS));
+                        boundaryRect.setAttribute('y', ry * (patternUnitHeight + GROUT_THICKNESS));
+                        boundaryRect.setAttribute('width', patternUnitWidth);
+                        boundaryRect.setAttribute('height', patternUnitHeight);
+                        boundaryRect.setAttribute('class', `pattern-boundary ${showPatternBoundary ? '' : 'hidden'}`); // Initial state
+                        svg.appendChild(boundaryRect);
+                        boundaryRects.push(boundaryRect); // Store reference
+
+                        for (let j = 0; j < row.widths.length; j++) {
+                            const width = row.widths[j];
+                            stoneInRowIndex = j + 1; // 1-based index for stone in row
+
+                            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                            rect.setAttribute('x', currentX);
+                            rect.setAttribute('y', currentY);
+                            rect.setAttribute('width', width);
+                            rect.setAttribute('height', row.height);
+                            rect.setAttribute('class', 'stone'); // Apply CSS class for styling
+                            // Store original dimensions and stone code as data attributes
+                            rect.dataset.originalWidth = width;
+                            rect.dataset.originalHeight = row.height;
+                            rect.dataset.stoneCode = `S${stoneInRowIndex}-R${rowInPatternIndex}`;
+                            
+                            // Add click event listener to display dimensions
+                            rect.addEventListener('click', (event) => {
+                                const display = document.getElementById('dimensionDisplay');
+                                if (display) {
+                                    const clickedWidth = event.target.dataset.originalWidth;
+                                    const clickedHeight = event.target.dataset.originalHeight;
+                                    const clickedCode = event.target.dataset.stoneCode;
+                                    display.textContent = `${clickedCode} = ${clickedWidth}x${clickedHeight} cm`;
+                                }
+                            });
+
+                            svg.appendChild(rect);
+
+                            // Create and append text element for dimensions
+                            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            text.setAttribute('x', currentX + width / 2);
+                            text.setAttribute('y', currentY + row.height / 2);
+                            text.setAttribute('class', `dimension-text ${showAllDimensions ? '' : 'hidden'}`); // Initial state
+                            text.textContent = `${width}x${row.height}`;
+                            svg.appendChild(text);
+                            dimensionTextElements.push(text); // Store reference
+
+                            currentX += width + GROUT_THICKNESS; // Move X for the next stone + grout
+                        }
+                    }
+                    currentY += row.height + GROUT_THICKNESS; // Move Y for the next row + grout
+                }
+            }
+        }
+
+        function togglePatternBoundary() {
+            showPatternBoundary = !showPatternBoundary;
+            boundaryRects.forEach(rect => {
+                rect.classList.toggle('hidden', !showPatternBoundary);
+            });
+        }
+
+        function toggleAllDimensions() {
+            showAllDimensions = !showAllDimensions;
+            dimensionTextElements.forEach(text => {
+                text.classList.toggle('hidden', !showAllDimensions);
+            });
+            // Clear the individual stone dimension display when toggling all dimensions
+            document.getElementById('dimensionDisplay').textContent = "Click on a stone to see its dimensions.";
+        }
+
+        function cyclePatternRepetition() {
+            currentRepeatFactorIndex = (currentRepeatFactorIndex + 1) % repeatFactors.length;
+            const currentFactor = repeatFactors[currentRepeatFactorIndex];
+            document.querySelector('#cycleRepeatBtn .repeat-text').textContent = `x${currentFactor}`;
+            drawPattern();
+        }
+
+        function exportAsJpeg() {
+            const svgElement = document.getElementById('patternSvg');
+            if (!svgElement) {
+                console.error("SVG element not found for export.");
+                alert("Failed to export image: SVG element not found.");
+                return;
+            }
+
+            // Get the current viewBox dimensions to render the SVG correctly
+            const viewBox = svgElement.getAttribute('viewBox').split(' ').map(Number);
+            const svgContentWidth = viewBox[2];
+            const svgContentHeight = viewBox[3];
+
+            // Create a temporary SVG element with inlined styles for accurate rendering
+            const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            tempSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            tempSvg.setAttribute('width', svgContentWidth);
+            tempSvg.setAttribute('height', svgContentHeight);
+            tempSvg.setAttribute('viewBox', `0 0 ${svgContentWidth} ${svgContentHeight}`);
+
+            // Add the inlined styles. Fixed font size for export and black fill.
+            const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+            const exportFontSize = 14; // Fixed font size for export to prevent oversizing
+            styleElement.textContent = `
+                .stone { fill: #E0C9A6; stroke: #333; stroke-width: 1; }
+                .pattern-boundary { stroke: #ff0000; stroke-width: 2; stroke-dasharray: 5 5; fill: none; }
+                .dimension-text { fill: black; font-size: ${exportFontSize}px; text-anchor: middle; dominant-baseline: middle; font-weight: bold; }
+                .hidden { display: none; }
+            `;
+            tempSvg.appendChild(styleElement);
+
+            // Clone the current content of the visible SVG to the temporary SVG
+            Array.from(svgElement.children).forEach(child => {
+                // Only clone elements that are currently visible based on their class list
+                if (!child.classList.contains('hidden')) {
+                    const clonedChild = child.cloneNode(true);
+                    // Ensure text elements have black fill for export, overriding any other potential fill
+                    if (clonedChild.tagName === 'text' && clonedChild.classList.contains('dimension-text')) {
+                        clonedChild.setAttribute('fill', 'black');
+                    }
+                    tempSvg.appendChild(clonedChild);
+                }
+            });
+
+            // Serialize the temporary SVG to a string
+            const svgData = new XMLSerializer().serializeToString(tempSvg);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = svgContentWidth;
+                canvas.height = svgContentHeight;
+                const ctx = canvas.getContext('2d');
+
+                // Fill background with white to prevent transparency issues with JPEG
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.drawImage(img, 0, 0);
+                URL.revokeObjectURL(url); // Clean up the object URL
+
+                const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.9); // 0.9 is quality (0.0 to 1.0)
+
+                const a = document.createElement('a');
+                a.href = jpegDataUrl;
+                a.download = 'stone_pattern.jpeg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+            img.onerror = (err) => {
+                console.error("Error loading SVG into image for export:", err);
+                alert("Failed to export image. Please ensure your browser supports SVG to Canvas rendering.");
+            };
+            img.src = url;
+        }
+
+        function exportAsPat() {
+            const parsedPattern = currentDisplayedPattern; // Use the currently displayed pattern
+            if (parsedPattern.length === 0) {
+                alert("No valid pattern data to export as PAT.");
+                return;
+            }
+
+            // Calculate the total width and height of the single repeating pattern unit
+            const baseRowWidthSum = parsedPattern[0].widths.reduce((sum, width) => sum + width + GROUT_THICKNESS, 0);
+            const patUnitWidth = baseRowWidthSum - GROUT_THICKNESS;
+
+            const patUnitHeight = parsedPattern.reduce((sum, row) => sum + row.height + GROUT_THICKNESS, 0) - GROUT_THICKNESS;
+
+            // Generate a descriptive name for the PAT pattern
+            const patternName = `STONE_LAYOUT_${parseInt(patUnitWidth)}X${parseInt(patUnitHeight)}`;
+            const description = `Muhamad Shkeir Custom Stone Pattern (${parseInt(patUnitWidth)}x${parseInt(patUnitHeight)} Unit)`;
+
+            let patContent = `*${patternName},${description}\n`;
+
+            // PAT format: angle, x-origin, y-origin, delta-x, delta-y, dash-length, gap-length
+            // For a rectangular boundary, we define four lines:
+
+            // Horizontal line at y=0 (bottom edge of the unit)
+            // Angle 0, origin (0,0), delta-x 0, delta-y = patternUnitHeight (repeats every patternUnitHeight)
+            // Dash length = patternUnitWidth, gap length = 0 (solid line)
+            patContent += `0, 0, 0, 0, ${patUnitHeight}, ${patUnitWidth}, 0\n`;
+
+            // Horizontal line at y=patternUnitHeight (top edge of the unit)
+            // This line is drawn relative to the origin of the pattern definition.
+            patContent += `0, 0, ${patUnitHeight}, 0, ${patUnitHeight}, ${patUnitWidth}, 0\n`;
+
+            // Vertical line at x=0 (left edge of the unit)
+            // Angle 90, origin (0,0), delta-x = patternUnitWidth (repeats every patternUnitWidth)
+            // Dash length = patternUnitHeight, gap length = 0 (solid line)
+            patContent += `90, 0, 0, ${patUnitWidth}, 0, ${patUnitHeight}, 0\n`;
+
+            // Vertical line at x=patternUnitWidth (right edge of the unit)
+            // This line is drawn relative to the origin of the pattern definition.
+            patContent += `90, ${patUnitWidth}, 0, ${patUnitWidth}, 0, ${patUnitHeight}, 0\n`;
+
+            // Create a Blob from the PAT content
+            const blob = new Blob([patContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            // Create a temporary link element to trigger download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${patternName}.pat`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url); // Clean up the object URL
+
+            alert(`PAT file "${patternName}.pat" generated and downloaded.\n\nNote: This PAT file defines the outer rectangular boundary of your pattern unit. It does not include the internal grout lines of individual stone pieces due to the limitations of the AutoCAD PAT format for complex, non-uniform layouts.`);
+        }
+
+        // Function to initialize originalParsedPattern and rowsByHeightMap
+        function initializePatternData() {
+            originalParsedPattern = parsePatternData(userPatternInput);
+
+            // Populate rowsByHeightMap
+            rowsByHeightMap = {};
+            originalParsedPattern.forEach(row => {
+                if (!rowsByHeightMap[row.height]) {
+                    rowsByHeightMap[row.height] = [];
+                }
+                rowsByHeightMap[row.height].push(row);
+            });
+        }
+
+        // Function to shuffle widths within each row of the current displayed pattern
+        function shuffleStonesWithinRows() {
+            if (currentDisplayedPattern.length === 0) {
+                alert("No pattern to shuffle. Please generate a pattern first.");
+                return;
+            }
+
+            // Create a deep copy to ensure we don't modify the original data directly
+            const newShuffledPattern = JSON.parse(JSON.stringify(currentDisplayedPattern));
+
+            newShuffledPattern.forEach(row => {
+                // Shuffle widths for each row
+                for (let i = row.widths.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [row.widths[i], row.widths[j]] = [row.widths[j], row.widths[i]];
+                }
+            });
+            currentDisplayedPattern = newShuffledPattern;
+            drawPattern(); // Redraw the pattern with the new shuffled widths
+        }
+
+        // Function to cycle through the predefined row height sequences
+        function cycleRowSequence() {
+            if (originalParsedPattern.length === 0) {
+                alert("Cannot cycle sequences: Original pattern data is empty.");
+                return;
+            }
+            if (allHeightSequences.length === 0) {
+                alert("Cannot cycle sequences: No predefined height sequences available.");
+                return;
+            }
+
+            // Move to the next sequence
+            currentSequenceIndex = (currentSequenceIndex + 1) % allHeightSequences.length;
+            const targetHeightSequence = allHeightSequences[currentSequenceIndex];
+
+            // Build the new pattern based on the target height sequence
+            const newPattern = [];
+            // Keep track of which original row (by ID) has been used for a given height
+            // This ensures that if there are multiple original rows with the same height,
+            // we cycle through them predictably.
+            const originalRowUseCount = {}; 
+            originalParsedPattern.forEach(row => originalRowUseCount[row.id] = 0); // Initialize counts
+
+            for (const targetHeight of targetHeightSequence) {
+                const availableOriginalRowsForHeight = rowsByHeightMap[targetHeight];
+                if (!availableOriginalRowsForHeight || availableOriginalRowsForHeight.length === 0) {
+                    console.warn(`No original rows found for height: ${targetHeight}. Skipping.`);
+                    continue;
+                }
+
+                // Find the next available original row for this height
+                let rowToUse = null;
+                for (let i = 0; i < availableOriginalRowsForHeight.length; i++) {
+                    const candidateRow = availableOriginalRowsForHeight[i];
+                    if (originalRowUseCount[candidateRow.id] === 0) {
+                        rowToUse = candidateRow;
+                        break;
+                    }
+                }
+
+                // If all original rows of this height have been used in this sequence cycle,
+                // reset counts for this height and start from the beginning.
+                if (!rowToUse) {
+                    availableOriginalRowsForHeight.forEach(row => originalRowUseCount[row.id] = 0);
+                    rowToUse = availableOriginalRowsForHeight[0]; // Use the first one again
+                }
+                originalRowUseCount[rowToUse.id]++; // Mark as used for this sequence generation
+
+                // Deep copy the row and its widths
+                const newRow = {
+                    height: rowToUse.height,
+                    widths: [...rowToUse.widths] // Create a copy of the widths array
+                };
+
+                // Shuffle widths within this new row (always shuffle for variety)
+                for (let i = newRow.widths.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newRow.widths[i], newRow.widths[j]] = [newRow.widths[j], newRow.widths[i]];
+                }
+                newPattern.push(newRow);
+            }
+
+            currentDisplayedPattern = newPattern;
+            drawPattern(); // Redraw the pattern with the new sequence and shuffled widths
+        }
+
+        // Light/Dark Mode Toggle
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            updateThemeIcon(isDarkMode);
+        }
+
+        function updateThemeIcon(isDarkMode) {
+            const themeIcon = document.querySelector('#toggleThemeBtn .theme-icon');
+            if (themeIcon) {
+                if (isDarkMode) {
+                    themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+                } else {
+                    themeIcon.innerHTML = `
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    `;
+                }
+            }
+        }
+
+        // Full Screen Toggle
+        let isFullScreen = false;
+        function toggleFullScreenView() {
+            isFullScreen = !isFullScreen;
+            document.body.classList.toggle('full-screen-mode', isFullScreen);
+            
+            const svgElement = document.getElementById('patternSvg');
+            if (isFullScreen) {
+                // Add click listener to SVG to exit full screen
+                svgElement.addEventListener('click', toggleFullScreenView);
+            } else {
+                // Remove click listener when exiting full screen
+                svgElement.removeEventListener('click', toggleFullScreenView);
+            }
+            drawPattern(); // Redraw to adjust viewBox if needed for full screen
+        }
+
+        // Modal Functions
+        function openContactModal() {
+            document.getElementById('contactModalOverlay').classList.add('show');
+        }
+
+        function closeContactModal() {
+            document.getElementById('contactModalOverlay').classList.remove('show');
+        }
+
+        // Initial setup when the window loads
+        window.onload = () => {
+            initializePatternData(); // Parse original data and group by height
+            currentDisplayedPattern = JSON.parse(JSON.stringify(originalParsedPattern)); // Set initial displayed pattern to original
+
+            // Apply saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+            updateThemeIcon(savedTheme === 'dark'); // Update icon based on initial theme
+
+            drawPattern(); // Initial draw of the pattern
+
+            // Attach event listeners to the buttons
+            document.getElementById('toggleBoundaryBtn').addEventListener('click', togglePatternBoundary);
+            document.getElementById('toggleAllDimensionsBtn').addEventListener('click', toggleAllDimensions);
+            document.getElementById('exportJpegBtn').addEventListener('click', exportAsJpeg);
+            document.getElementById('exportPatBtn').addEventListener('click', exportAsPat);
+            document.getElementById('shuffleStonesBtn').addEventListener('click', shuffleStonesWithinRows);
+            document.getElementById('cycleRowSequenceBtn').addEventListener('click', cycleRowSequence);
+            document.getElementById('cycleRepeatBtn').addEventListener('click', cyclePatternRepetition); // New combined button
+            document.getElementById('toggleThemeBtn').addEventListener('click', toggleTheme);
+            document.getElementById('toggleFullScreenBtn').addEventListener('click', toggleFullScreenView);
+
+            // Modal event listeners
+            document.getElementById('openContactModalBtn').addEventListener('click', openContactModal);
+            document.getElementById('closeContactModalBtn').addEventListener('click', closeContactModal);
+            document.getElementById('contactModalOverlay').addEventListener('click', (event) => {
+                // Close modal if clicked on overlay, not content
+                if (event.target === document.getElementById('contactModalOverlay')) {
+                    closeContactModal();
+                }
+            });
+        };
+
+        window.onresize = drawPattern; // Redraw on resize to adjust scaling
+    </script>
+</body>
+</html>
